@@ -1,0 +1,4 @@
+# logs/
+# This folder is used by the CI/CD pipeline to store logs.
+# It is uploaded as an artifact when a workflow fails.
+# It is intentionally empty — logs are generated at runtime.

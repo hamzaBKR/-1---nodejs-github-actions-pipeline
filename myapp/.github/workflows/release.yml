@@ -1,0 +1,32 @@
+name: Release Pipeline
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  deploy-dev:
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: dev
+      tag: ${{ github.ref_name }}
+    secrets:
+      API_KEY: ${{ secrets.API_KEY }}
+
+  deploy-prod:
+    needs: deploy-dev
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: production
+      tag: ${{ github.ref_name }}
+    secrets:
+      API_KEY: ${{ secrets.API_KEY }}
+
+  summary:
+    needs: [deploy-dev, deploy-prod]
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "Dev URL: ${{ needs.deploy-dev.outputs.deploy_url }}"
+          echo "Prod URL: ${{ needs.deploy-prod.outputs.deploy_url }}"

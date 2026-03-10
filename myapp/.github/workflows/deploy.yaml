@@ -1,0 +1,37 @@
+name: call but release 
+on:
+    workflow_call:
+        inputs:
+            environment:
+                required: true
+                type: string
+            tag:
+                required: true
+                type: string
+        secrets:
+            API_KEY: 
+                required: true
+        outputs:
+            deploy_url:
+                description: 'The application deploy url'
+                value: ${{ jobs.deploy.outputs.deploy_url }}
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        environment: ${{ inputs.environment}}
+        outputs:
+           deploy_url: ${{ steps.deploy.outputs.url }}
+        steps:
+            - name: Deploy to ${{ inputs.environment }}
+              id: deploy
+              if: startsWith(github.ref, 'refs/tags/')
+              env:
+                API_KEY: ${{ secrets.API_KEY }}
+              run: |
+                echo "Deploying to environment: ${{ inputs.environment }}"
+                echo "Using tag: ${{ inputs.tag }}"
+                # Simulate deployment and set the output URL
+                DEPLOY_URL="https://example.com/${{ inputs.environment }}"
+                echo "url=$DEPLOY_URL" >> $GITHUB_OUTPUT
+            - name: Print deploy URL
+              run: echo "App deployed at ${{ steps.deploy.outputs.url }}"
