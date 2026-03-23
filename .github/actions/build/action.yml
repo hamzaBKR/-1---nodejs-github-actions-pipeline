@@ -1,0 +1,50 @@
+name: Build App
+description: Installs dependencies, builds the app and returns build tag and path
+
+inputs:
+  node_version:
+    description: 'Node version to use'
+    required: false
+    default: '18'
+  environment:
+    description: 'Target environment'
+    required: false
+    default: 'dev'
+
+outputs:
+  build_tag:
+    description: 'The generated build tag'
+    value: ${{ steps.generate_tag.outputs.build_tag }}
+  build_path:
+    description: 'Path to build output'
+    value: ${{ steps.build.outputs.build_path }}
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node_version }}
+
+    - name: Install dependencies
+      run: npm ci
+      shell: bash
+
+    - name: Build
+      id: build
+      run: |
+        npm run build
+        echo "build_path=./dist" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Generate build tag
+      id: generate_tag
+      run: echo "build_tag=${{ inputs.environment }}-$(date +%Y%m%d%H%M)" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Print build info
+      run: |
+        echo "Build tag: ${{ steps.generate_tag.outputs.build_tag }}"
+        echo "Build path: ${{ steps.build.outputs.build_path }}"
+      shell: bash

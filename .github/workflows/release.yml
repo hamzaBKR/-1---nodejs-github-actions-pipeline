@@ -1,0 +1,47 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    outputs:
+      tag: ${{ steps.get_tag.outputs.tag }}
+    steps:
+      - name: Get tag
+        id: get_tag
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Print tag
+        run: echo "Releasing ${{ steps.get_tag.outputs.tag }}"
+
+  deploy-dev:
+    needs: check
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: dev
+      tag: ${{ needs.check.outputs.tag }}
+    secrets:
+      API_KEY: ${{ secrets.API_KEY }}
+
+  deploy-production:
+    needs: deploy-dev
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: production
+      tag: ${{ needs.check.outputs.tag }}
+    secrets:
+      API_KEY: ${{ secrets.API_KEY }}
+
+  summary:
+    needs: deploy-production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print summary
+        run: |
+          echo "Release ${{ needs.check.outputs.tag }} deployed successfully!"
+          echo "Production URL: ${{ needs.deploy-production.outputs.deploy_url }}"

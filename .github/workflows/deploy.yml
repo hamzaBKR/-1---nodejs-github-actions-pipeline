@@ -1,0 +1,44 @@
+name: Reusable Deploy
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: string
+      tag:
+        description: 'Build tag to deploy'
+        required: true
+        type: string
+    secrets:
+      API_KEY:
+        required: true
+    outputs:
+      deploy_url:
+        description: 'The deployed app URL'
+        value: ${{ jobs.deploy.outputs.deploy_url }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    outputs:
+      deploy_url: ${{ steps.set_url.outputs.url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to ${{ inputs.environment }}
+        run: |
+          echo "Deploying tag ${{ inputs.tag }} to ${{ inputs.environment }}"
+          echo "Using API_KEY: ${{ secrets.API_KEY }}"
+
+      - name: Set deploy URL
+        id: set_url
+        run: echo "url=https://${{ inputs.environment }}.myapp.com" >> $GITHUB_OUTPUT
+
+      - name: Print deploy URL
+        run: echo "Deployed to ${{ steps.set_url.outputs.url }}"
